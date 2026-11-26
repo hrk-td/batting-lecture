@@ -1,0 +1,600 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="野球打撃における手関節トルク、バットの運動、打球速度の関係を図と簡易シミュレーションで学ぶ講義資料。">
+<title>手関節トルクと打球速度 | スポーツバイオメカニクス</title>
+<style>
+  :root {
+    color-scheme: light;
+    --paper: #f7f7f0;
+    --ink: #102a23;
+    --muted: #41564e;
+    --rule: #aebbb1;
+    --accent: #d7f45b;
+    --green: #3d7016;
+    --diagram: #102e25;
+    --panel: #eef2e3;
+    --white: #fbfcf9;
+    font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", system-ui, sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); line-height: 1.75; }
+  a { color: inherit; text-underline-offset: .22em; }
+  a:focus-visible, input:focus-visible, summary:focus-visible {
+    outline: 2px solid var(--green);
+    outline-offset: 4px;
+  }
+  h1, h2, h3, p, figure, dl, dd { margin: 0; }
+  h1, h2, h3 { line-height: 1.3; }
+  .wrap { width: min(1144px, calc(100% - 64px)); margin-inline: auto; }
+  .masthead {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 12px 28px;
+    flex-wrap: wrap; padding: 12px 0 11px; border-bottom: 2px solid var(--ink);
+  }
+  .masthead strong { font-size: clamp(16px, 2.15vw, 25px); letter-spacing: -.025em; }
+  nav { display: flex; flex-wrap: wrap; gap: 9px 26px; font-size: 14px; font-weight: 700; }
+  nav a { text-decoration: none; }
+  nav a:hover { text-decoration: underline; }
+  .hero {
+    display: grid; grid-template-columns: minmax(0, .81fr) minmax(0, 1.4fr);
+    align-items: center; gap: 25px; margin-block: 26px 27px;
+  }
+  h1 { font-size: clamp(26px, 4.25vw, 54px); letter-spacing: -.058em; font-weight: 850; }
+  .hero p { font-size: 15px; margin-top: 17px; max-width: 43ch; }
+  .schematic { overflow: hidden; border-radius: 11px; background: var(--diagram); color: #f7f7e9; }
+  .schematic canvas { display: block; width: 100%; height: clamp(240px, 27vw, 320px); }
+  .flow {
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 40px; list-style: none; padding: 0; margin: 0;
+  }
+  .flow li { position: relative; padding: 12px 15px 14px; border: 1px solid var(--ink); border-radius: 8px; }
+  .flow li + li::before {
+    content: ""; position: absolute; width: 19px; height: 12px; left: -30px; top: calc(50% - 6px);
+    background: var(--ink);
+    clip-path: polygon(0 42%, 76% 42%, 57% 12%, 67% 0, 100% 50%, 67% 100%, 57% 88%, 76% 58%, 0 58%);
+  }
+  .flow h3 { font-size: clamp(17px, 2vw, 21px); padding-bottom: 7px; border-bottom: 2px solid #8ab951; }
+  .flow p { margin-top: 7px; font-size: 13.5px; color: var(--muted); }
+  section { scroll-margin-top: 14px; }
+  .section-heading {
+    display: flex; align-items: center; gap: 15px; margin: 30px 0 12px;
+    font-size: clamp(21px, 3.1vw, 33px); letter-spacing: -.043em;
+  }
+  .section-heading::after { content: ""; height: 2px; flex: 1; background: var(--ink); }
+  .lab {
+    display: grid; grid-template-columns: minmax(0, .83fr) minmax(0, 1.47fr);
+    border: 1px solid var(--ink); border-radius: 9px; overflow: hidden; background: var(--white);
+  }
+  .controls { background: var(--panel); padding: 19px 23px; border-right: 1px solid var(--rule); }
+  .control + .control { margin-top: 16px; }
+  .control-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 2px 8px; }
+  label { font-size: 14px; font-weight: 750; }
+  .unit { color: var(--muted); font-size: .79em; font-weight: 500; white-space: nowrap; }
+  .reading {
+    display: inline-block; min-width: 49px; border: 1px solid var(--rule); border-radius: 4px;
+    padding: 0 6px; color: var(--ink); background: var(--white); text-align: center; font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+  input[type="range"] {
+    display: block; width: 100%; height: 32px; margin: 1px 0 -1px;
+    appearance: none; background: transparent; cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 6px; border-radius: 9px;
+    background: linear-gradient(90deg, #8ab934 var(--fill, 50%), #c6cec2 var(--fill, 50%));
+  }
+  input[type="range"]::-moz-range-track { height: 6px; border-radius: 9px; background: #c6cec2; }
+  input[type="range"]::-moz-range-progress { height: 6px; border-radius: 9px; background: #8ab934; }
+  input[type="range"]::-webkit-slider-thumb {
+    appearance: none; width: 18px; height: 18px; margin-top: -6px; border-radius: 50%; background: var(--ink);
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 18px; height: 18px; border: 0; border-radius: 50%; background: var(--ink);
+  }
+  .scale { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 11px; }
+  .control-help { color: var(--muted); font-size: 12px; margin: 12px 0 0; }
+  .results { min-width: 0; padding: 19px 23px 12px; }
+  .metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 16px; }
+  .metric { padding-inline: 14px; min-width: 0; }
+  .metric:first-child { padding-left: 0; }
+  .metric:last-child { padding-right: 0; }
+  .metric + .metric { border-left: 1px solid var(--rule); }
+  .metric dt { font-weight: 750; font-size: 13px; line-height: 1.4; }
+  .metric dd {
+    display: inline-block; margin-top: 5px; padding: 1px 8px; border-radius: 5px;
+    background: var(--accent); font-size: clamp(16px, 2.6vw, 28px); line-height: 1.38;
+    font-weight: 800; letter-spacing: -.035em; font-variant-numeric: tabular-nums; white-space: nowrap;
+  }
+  .metric dd .unit { font-size: .48em; color: var(--ink); }
+  .metric small { display: block; margin-top: 4px; font-size: 11px; color: var(--muted); }
+  .chart h3 { font-size: 15px; margin-bottom: 2px; }
+  .chart figcaption { color: var(--muted); font-size: 11.5px; }
+  .chart canvas { display: block; width: 100%; height: 195px; }
+  .instruction { margin-top: 9px; color: var(--muted); font-size: 13px; }
+  .notes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px; }
+  .notes h3 { font-size: 17px; padding-bottom: 5px; border-bottom: 1px solid var(--rule); }
+  .notes p, .notes li { color: var(--muted); font-size: 13.5px; }
+  .notes p { margin-top: 8px; }
+  .notes ul { margin: 7px 0 0; padding-left: 1.2em; }
+  .notes li + li { margin-top: 8px; }
+  .notes a { color: var(--green); white-space: nowrap; }
+  .formula {
+    display: block; background: #e8eddf; border-left: 2px solid var(--green);
+    padding: 6px 9px; margin-block: 7px; color: var(--ink); font-size: 14px;
+    font-variant-numeric: lining-nums; overflow-wrap: anywhere; line-height: 1.55;
+  }
+  .formula + .formula { margin-top: -3px; }
+  var { font-family: Georgia, "Times New Roman", serif; }
+  sub { line-height: 0; }
+  details {
+    border-top: 1px solid var(--rule); border-bottom: 2px solid var(--ink);
+    padding: 10px 1px 12px; margin-block: 19px 26px; font-size: 13.5px;
+  }
+  details summary { font-weight: 750; cursor: pointer; }
+  details p { color: var(--muted); margin-top: 5px; padding-left: 1em; }
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden;
+    clip-path: inset(50%); white-space: nowrap; border: 0;
+  }
+  @media (max-width: 790px) {
+    .wrap { width: calc(100% - 40px); }
+    .hero { gap: 18px; }
+    .flow { gap: 24px; }
+    .flow li + li::before { width: 14px; left: -20px; }
+    .controls, .results { padding-inline: 16px; }
+    .metric { padding-inline: 8px; }
+  }
+  @media (max-width: 620px) {
+    .wrap { width: calc(100% - 32px); }
+    nav { font-size: 12px; gap: 8px 16px; }
+    .hero, .lab, .notes { grid-template-columns: 1fr; }
+    .hero { gap: 17px; margin-block: 19px 21px; }
+    .hero h1 { font-size: clamp(29px, 8.6vw, 44px); }
+    .hero p { margin-top: 10px; font-size: 14px; }
+    .schematic canvas { height: clamp(200px, 54vw, 278px); }
+    .flow { grid-template-columns: 1fr; gap: 11px; }
+    .flow li { padding: 10px 12px; }
+    .flow li + li::before { display: none; }
+    .flow h3 { padding-bottom: 5px; }
+    .flow p { margin-top: 5px; }
+    .controls { border-right: 0; border-bottom: 1px solid var(--rule); }
+    .control + .control { margin-top: 11px; }
+    .notes { gap: 16px; }
+  }
+  @media (pointer: coarse) {
+    input[type="range"] { height: 44px; }
+  }
+  @media print {
+    @page { margin: 11mm; }
+    * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    body { background: white; }
+    .wrap { width: 100%; }
+    nav { display: none; }
+    .hero { grid-template-columns: minmax(0, .81fr) minmax(0, 1.4fr); }
+    .hero h1 { font-size: 30px; }
+    .schematic canvas { height: 190px; }
+    .flow { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .flow li + li::before { display: none; }
+    .lab { grid-template-columns: minmax(0, .83fr) minmax(0, 1.47fr); }
+    .controls, .results { padding: 12px; }
+    .chart canvas { height: 158px; }
+    .notes { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px; }
+    .hero, .flow, .lab, .notes > div { break-inside: avoid; }
+    .section-heading { break-after: avoid; }
+  }
+</style>
+</head>
+<body>
+<header class="wrap masthead">
+  <strong>スポーツバイオメカニクス</strong>
+  <nav aria-label="目次">
+    <a href="#mechanism">仕組み</a>
+    <a href="#simulation">シミュレーション</a>
+    <a href="#research">研究知見</a>
+  </nav>
+</header>
+<main class="wrap">
+  <section class="hero" aria-labelledby="title">
+    <div>
+      <h1 id="title">手関節トルクと、<br>打球速度。</h1>
+      <p>手関節は、両手でバットを加速し、向きを調整する動きに関わる。手元で生じる力とモーメントがバットの運動を変え、ボールに当たる瞬間の速さや当たり方が打球速度を左右する。</p>
+    </div>
+    <figure class="schematic">
+      <canvas id="schematic" role="img" aria-label="打撃の概念図。両手からバットに力とモーメントが作用し、バットがボールに当たる。矢印は打球の進む向きを示す。">両手からバットに力とモーメントが作用し、バットがボールに当たる。</canvas>
+    </figure>
+  </section>
+
+  <section id="mechanism" aria-label="手関節から打球速度までの仕組み">
+    <ol class="flow">
+      <li>
+        <h3>手関節のトルク</h3>
+        <p>手関節をある軸まわりに回そうとする力の作用（N·m）。方向や作用する時間によって、手の動きへの影響が変わる。</p>
+      </li>
+      <li>
+        <h3>バットの運動</h3>
+        <p>体幹や腕の動きとともに、両手が加える力とモーメントがバットの並進・回転を変え、打点の速度とバットの向きに影響する。</p>
+      </li>
+      <li>
+        <h3>打球速度</h3>
+        <p>ボールがバットを離れた直後の速さ。打点でのバット速度、投球速度、バットのどこにどう当たるかで変わる。</p>
+      </li>
+    </ol>
+  </section>
+
+  <section id="simulation" aria-labelledby="simulation-title">
+    <h2 class="section-heading" id="simulation-title">打球速度をシミュレーション</h2>
+    <div class="lab">
+      <div class="controls" aria-label="モデルの入力" role="group">
+        <div class="control">
+          <div class="control-top">
+            <label for="moment">バットに加わるモーメント <span class="unit">N·m</span></label>
+            <span class="reading" id="moment-value" aria-hidden="true">+30</span>
+          </div>
+          <input id="moment" type="range" min="-30" max="60" value="30" step="1" style="--fill:66.67%" aria-describedby="moment-help" aria-valuetext="プラス30 ニュートンメートル">
+          <div class="scale" aria-hidden="true"><span>−30 減速方向</span><span>+60 加速方向</span></div>
+        </div>
+        <div class="control">
+          <div class="control-top">
+            <label for="pitch">投球速度 <span class="unit">m/s</span></label>
+            <span class="reading" id="pitch-value" aria-hidden="true">38</span>
+          </div>
+          <input id="pitch" type="range" min="0" max="45" value="38" step="1" style="--fill:84.44%" aria-valuetext="38 メートル毎秒">
+          <div class="scale" aria-hidden="true"><span>0（静止球）</span><span>45</span></div>
+        </div>
+        <div class="control">
+          <div class="control-top">
+            <label for="efficiency">衝突効率 <span class="unit">無次元</span></label>
+            <span class="reading" id="efficiency-value" aria-hidden="true">0.25</span>
+          </div>
+          <input id="efficiency" type="range" min="0.10" max="0.35" value="0.25" step="0.01" style="--fill:60%" aria-describedby="efficiency-help" aria-valuetext="0.25">
+          <div class="scale" aria-hidden="true"><span>0.10</span><span>0.35</span></div>
+        </div>
+        <p class="control-help" id="moment-help">操作するのは、バットの固定軸まわりに両手が加える合成モーメント。</p>
+        <p class="sr-only" id="efficiency-help">打点やバットの特性によって変わる、ボールのはね返りやすさの指標。</p>
+      </div>
+      <div class="results">
+        <dl class="metrics" aria-label="モデルの計算結果">
+          <div class="metric">
+            <dt>打点のバット速度</dt>
+            <dd><span id="bat-speed">28.0</span> <span class="unit">m/s</span></dd>
+          </div>
+          <div class="metric">
+            <dt>打球速度</dt>
+            <dd><span id="exit-speed">44.4</span> <span class="unit">m/s</span></dd>
+            <small id="exit-kmh">160.0 km/h</small>
+          </div>
+          <div class="metric">
+            <dt>打球速度の変化</dt>
+            <dd><span id="speed-change">+6.0</span> <span class="unit">m/s</span></dd>
+            <small>0 N·m のときと比較</small>
+          </div>
+        </dl>
+        <span class="sr-only" id="results-announcement" role="status"></span>
+        <figure class="chart" aria-labelledby="chart-title">
+          <h3 id="chart-title">モーメントと打球速度の関係</h3>
+          <figcaption id="chart-caption">投球速度 38 m/s、衝突効率 0.25。丸印は現在の条件。</figcaption>
+          <canvas id="chart" role="img" aria-label="バットにかかるモーメントと打球速度の関係を示す線グラフ" aria-describedby="chart-caption">加速方向のモーメントが大きいほど、固定軸モデルの打球速度は高くなる。</canvas>
+        </figure>
+      </div>
+    </div>
+    <p class="instruction">まずモーメントを 0 から +30 N·m に動かす。次に +30 N·m のまま衝突効率を下げ、同じバット速度でも打球速度が変わることを確かめよう。</p>
+    <noscript><p>スライダーと図の表示には JavaScript が必要です。</p></noscript>
+  </section>
+
+  <section id="research" aria-labelledby="research-title">
+    <h2 class="section-heading" id="research-title">研究知見とモデルの前提</h2>
+    <div class="notes">
+      <div>
+        <h3>実際のスイングで分かっていること</h3>
+        <ul>
+          <li>手関節のトルクは身体内部の関節で生じる量。バットに加わる力とモーメントは、両手からバットへの作用を表す。左右それぞれの関節トルクを調べる研究では、計測バットで得た各手の力とモーメントを、動作データと合わせて用いる。 <a href="https://doi.org/10.5432/jjpehss.13067">阿江ほか（2014）</a></li>
+          <li>大学選手17名のティー打撃では、バット長軸方向の合力がインパクト時のヘッド速度に大きく寄与した。両手がバットに加える偶力モーメントは、インパクト時のバットの向きにも関わった。 <a href="https://doi.org/10.32226/jjbse.2015_007">森下ほか（2015）</a></li>
+          <li>アマチュア選手99名を対象とした解析では、インパクト直前にグリップに加わるトルクは低下し、バットの並進に加わるパワーは増加した。バットの回転と並進は、スイング中の異なる時期にヘッド速度を高める。 <a href="https://doi.org/10.5432/ijshs.201617">Horiuchi・Sakurai（2016）</a></li>
+          <li>バットのどこに当たるかによって、ボールのはね返りやすさが変わる。同じバット速度でも、衝突条件が変われば打球速度は変わる。 <a href="https://baseball.physics.illinois.edu/AJP-Feb2003.pdf">Nathan（2003）</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3>シミュレーションで使った式</h3>
+        <p>バットを固定軸のまわりに回る剛体とし、両手からのモーメント <var>τ</var> が時間 <var>Δt</var> だけ一定に作用すると仮定する。</p>
+        <div class="formula"><var>v</var><sub>bat</sub> = <var>r</var> × (<var>ω</var><sub>0</sub> + <var>τ</var> × <var>Δt</var> / <var>I</var>)</div>
+        <p>教材用の固定値は、打点までの距離 <var>r</var> = 0.68 m、初期角速度 <var>ω</var><sub>0</sub> = 34 rad/s、作用時間 <var>Δt</var> = 45 ms、慣性モーメント <var>I</var> = 0.19 kg·m²。</p>
+        <p>バットの打点と投球が一直線上で向かい合う衝突を仮定する。投球の速さ <var>v</var><sub>pitch</sub> は正の大きさ、<var>e</var><sub>A</sub> は衝突効率。 <a href="https://baseball.physics.illinois.edu/AJP-Feb2003.pdf">Nathan（2003）式 (3)</a></p>
+        <div class="formula"><var>v</var><sub>exit</sub> = (1 + <var>e</var><sub>A</sub>) × <var>v</var><sub>bat</sub> + <var>e</var><sub>A</sub> × <var>v</var><sub>pitch</sub></div>
+        <p>実際の打撃では、グリップの移動、トルクが作用するタイミング、打点や衝突角度も変化する。このモデルは、それらを単純化した教材用の計算例。</p>
+      </div>
+    </div>
+    <details>
+      <summary>確認問題　バット速度が 1 m/s 上がると、打球速度はどれだけ上がる？</summary>
+      <p>投球速度と衝突効率を固定し、<var>e</var><sub>A</sub> = 0.25 とすると、打球速度は 1.25 m/s 上がる。式でバット速度に掛かる係数は (1 + <var>e</var><sub>A</sub>) だから。</p>
+    </details>
+  </section>
+</main>
+<script>
+  'use strict';
+
+  const momentInput = document.getElementById('moment');
+  const pitchInput = document.getElementById('pitch');
+  const efficiencyInput = document.getElementById('efficiency');
+  const diagram = document.getElementById('schematic');
+  const chart = document.getElementById('chart');
+  const model = { radius: 0.68, initialOmega: 34, duration: 0.045, inertia: 0.19 };
+
+  function calculate(moment, pitch, efficiency) {
+    const omega = model.initialOmega + moment * model.duration / model.inertia;
+    const batSpeed = model.radius * omega;
+    const exitSpeed = (1 + efficiency) * batSpeed + efficiency * pitch;
+    return { batSpeed, exitSpeed };
+  }
+
+  function signed(value, decimals) {
+    return (value > 0 ? '+' : value < 0 ? '−' : '') + Math.abs(value).toFixed(decimals);
+  }
+
+  function drawCanvas(canvas, draw) {
+    const { width, height } = canvas.getBoundingClientRect();
+    if (!width || !height) return;
+    const pixelRatio = window.devicePixelRatio || 1;
+    canvas.width = Math.round(width * pixelRatio);
+    canvas.height = Math.round(height * pixelRatio);
+    const context = canvas.getContext('2d');
+    context.setTransform(canvas.width / width, 0, 0, canvas.height / height, 0, 0);
+    draw(context, width, height);
+  }
+
+  function line(ctx, points, color, width = 1) {
+    ctx.beginPath();
+    ctx.moveTo(...points[0]);
+    for (const point of points.slice(1)) ctx.lineTo(...point);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.stroke();
+  }
+
+  function circle(ctx, x, y, radius, color) {
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+  }
+
+  function arrow(ctx, start, end, color, width) {
+    const heading = Math.atan2(end[1] - start[1], end[0] - start[0]);
+    const wing = 11;
+    line(ctx, [start, end], color, width);
+    ctx.beginPath();
+    ctx.moveTo(...end);
+    ctx.lineTo(end[0] - wing * Math.cos(heading - 0.55), end[1] - wing * Math.sin(heading - 0.55));
+    ctx.lineTo(end[0] - wing * Math.cos(heading + 0.55), end[1] - wing * Math.sin(heading + 0.55));
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+  }
+
+  function drawDiagram(ctx, width, height) {
+    const ivory = '#f4f2dd';
+    const lime = '#d7f45b';
+    const field = '#496b5a';
+    ctx.fillStyle = '#102e25';
+    ctx.fillRect(0, 0, width, height);
+    for (let x = 0.5; x < width; x += 23) line(ctx, [[x, 0], [x, height]], '#25493c');
+    for (let y = 0.5; y < height; y += 23) line(ctx, [[0, y], [width, y]], '#25493c');
+
+    const fieldX = width * 0.855;
+    const fieldY = height * 0.955;
+    const diamond = height * 0.195;
+    ctx.beginPath();
+    ctx.arc(fieldX, fieldY + 6, height * 0.47, Math.PI * 1.1, Math.PI * 1.9);
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = field;
+    ctx.stroke();
+    line(ctx, [[fieldX - diamond * 2, fieldY - diamond], [fieldX, fieldY + 6], [fieldX + diamond * 2, fieldY - diamond]], field);
+    line(ctx, [[fieldX - diamond * 0.7, fieldY - diamond * 0.32], [fieldX, fieldY - diamond * 0.96],
+      [fieldX + diamond * 0.7, fieldY - diamond * 0.32]], field);
+
+    const start = [width * 0.115, height * 0.885];
+    const barrel = [width * 0.725, height * 0.353];
+    const angle = Math.atan2(barrel[1] - start[1], barrel[0] - start[0]);
+    const length = Math.hypot(barrel[0] - start[0], barrel[1] - start[1]);
+    const handle = [start[0] + (barrel[0] - start[0]) * 0.19, start[1] + (barrel[1] - start[1]) * 0.19];
+    const gripWidth = Math.min(width * 0.017, 8);
+    const barrelWidth = gripWidth * 2.45;
+    ctx.save();
+    ctx.translate(...start);
+    ctx.rotate(angle);
+    ctx.beginPath();
+    ctx.moveTo(-2, -gripWidth);
+    ctx.lineTo(length * 0.26, -gripWidth * 0.74);
+    ctx.bezierCurveTo(length * 0.54, -gripWidth * 0.92, length * 0.57, -barrelWidth, length - 9, -barrelWidth);
+    ctx.quadraticCurveTo(length + 6, -barrelWidth, length + 6, 0);
+    ctx.quadraticCurveTo(length + 6, barrelWidth, length - 9, barrelWidth);
+    ctx.bezierCurveTo(length * 0.57, barrelWidth, length * 0.54, gripWidth * 0.92, length * 0.26, gripWidth * 0.74);
+    ctx.lineTo(-2, gripWidth);
+    ctx.closePath();
+    ctx.fillStyle = ivory;
+    ctx.fill();
+    ctx.save();
+    ctx.clip();
+    ctx.fillStyle = '#d9dcc1';
+    ctx.fillRect(-12, 3, length + 25, 28);
+    for (let i = 0.026; i < 0.2; i += 0.028) {
+      line(ctx, [[length * i, -10], [length * i + 3, 10]], '#a0aa94');
+    }
+    ctx.setLineDash([5, 5]);
+    line(ctx, [[length * 0.24, 0], [length - 2, 0]], '#879884');
+    ctx.restore();
+    ctx.fillStyle = ivory;
+    ctx.beginPath();
+    ctx.ellipse(-2, 0, gripWidth * 0.76, gripWidth * 1.48, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    const arcRadius = Math.min(22, width * 0.052);
+    const arcCenter = [handle[0] - 1, handle[1] + 1];
+    const arcEnd = -0.53;
+    ctx.beginPath();
+    ctx.arc(...arcCenter, arcRadius, -2.67, arcEnd);
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = lime;
+    ctx.stroke();
+    const arcPoint = [arcCenter[0] + arcRadius * Math.cos(arcEnd), arcCenter[1] + arcRadius * Math.sin(arcEnd)];
+    arrow(ctx, [arcPoint[0] - 3, arcPoint[1] - 5], arcPoint, lime, 2);
+
+    const ballRadius = Math.min(width * 0.031, 20);
+    const ball = [barrel[0] + ballRadius * 0.68, barrel[1] - ballRadius * 0.64];
+    circle(ctx, ...ball, ballRadius, '#fbf8e9');
+    for (const side of [-1, 1]) {
+      const seamX = ball[0] + side * ballRadius * 0.48;
+      ctx.beginPath();
+      ctx.moveTo(seamX, ball[1] - ballRadius * 0.83);
+      ctx.quadraticCurveTo(seamX - side * ballRadius * 0.37, ball[1], seamX, ball[1] + ballRadius * 0.83);
+      ctx.strokeStyle = '#895249';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      for (let i = -3; i <= 3; i += 1) {
+        const x = seamX - side * ballRadius * (0.2 - (i / 3) ** 2 * 0.15);
+        const y = ball[1] + i * ballRadius * 0.22;
+        line(ctx, [[x - 1.8, y - 1.5], [x + 1.8, y + 1.5]], '#895249', 0.8);
+      }
+    }
+    arrow(ctx, [ball[0] + ballRadius + 2, ball[1]], [width * 0.947, height * 0.22], lime, 3);
+
+    const inset = width < 415 ? 12 : 17;
+    const labelSize = width < 415 ? 11 : 13;
+    ctx.font = '700 ' + labelSize + 'px sans-serif';
+    ctx.textBaseline = 'top';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = ivory;
+    ctx.fillText('打撃の力学（概念図）', inset + 7, inset + 6);
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = '#9eb6a4';
+    ctx.beginPath();
+    ctx.roundRect(inset, inset, ctx.measureText('打撃の力学（概念図）').width + 14, labelSize + 13, 4);
+    ctx.stroke();
+
+    ctx.fillStyle = lime;
+    ctx.fillText('両手の力とモーメント', width * 0.073, height * 0.51);
+    line(ctx, [[width * 0.205, height * 0.51 + labelSize + 4], [handle[0] - 7, handle[1] - arcRadius - 3]], '#9eb6a4');
+    ctx.fillStyle = ivory;
+    ctx.fillText('バット', width * 0.417, height * 0.33);
+    const labelPoint = [start[0] + (barrel[0] - start[0]) * 0.58, start[1] + (barrel[1] - start[1]) * 0.58];
+    line(ctx, [[width * 0.46, height * 0.33 + labelSize + 5], labelPoint], '#a4b8a9');
+    circle(ctx, ...labelPoint, 2.1, '#8da394');
+    ctx.fillText('ボール', width * 0.65, height * 0.11);
+    line(ctx, [[width * 0.693, height * 0.11 + labelSize + 4], [ball[0] - ballRadius * 0.6, ball[1] - ballRadius * 0.84]], '#a4b8a9');
+    ctx.textAlign = 'right';
+    ctx.fillText('打球速度', width * 0.95, height * 0.103);
+  }
+
+  function drawChart(ctx, width, height, moment, pitch, efficiency) {
+    const xLeft = 41;
+    const xRight = width - 14;
+    const yTop = 25;
+    const yBottom = height - 42;
+    const xMin = Number(momentInput.min);
+    const xMax = Number(momentInput.max);
+    // Keep the same display scale when the collision settings change.
+    const yMin = 15;
+    const yMax = 65;
+    const x = value => xLeft + (value - xMin) / (xMax - xMin) * (xRight - xLeft);
+    const y = value => yBottom - (value - yMin) / (yMax - yMin) * (yBottom - yTop);
+    const muted = '#41564e';
+    const green = '#5e8e22';
+    const ink = '#102a23';
+
+    ctx.font = '11px sans-serif';
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = muted;
+    ctx.fillText('打球速度（m/s）', 0, 9);
+
+    ctx.textAlign = 'right';
+    for (let speed = yMin; speed <= yMax; speed += 15) {
+      const position = Math.round(y(speed)) + 0.5;
+      line(ctx, [[xLeft, position], [xRight, position]], '#d9e1d5');
+      ctx.fillText(speed, xLeft - 8, position);
+    }
+    ctx.textAlign = 'center';
+    for (const tick of [-30, 0, 30, 60]) {
+      const position = Math.round(x(tick)) + 0.5;
+      if (tick === 0) ctx.setLineDash([4, 4]);
+      line(ctx, [[position, yTop], [position, yBottom]], tick === 0 ? '#9baa9d' : '#d9e1d5');
+      ctx.setLineDash([]);
+      ctx.fillText(signed(tick, 0), position, yBottom + 13);
+    }
+    line(ctx, [[xLeft, yTop], [xLeft, yBottom], [xRight, yBottom]], '#819387');
+    ctx.fillText('バットに加わるモーメント（N·m）', (xLeft + xRight) / 2, height - 9);
+
+    line(ctx, [
+      [x(xMin), y(calculate(xMin, pitch, efficiency).exitSpeed)],
+      [x(xMax), y(calculate(xMax, pitch, efficiency).exitSpeed)]
+    ], green, 2.5);
+    const current = calculate(moment, pitch, efficiency).exitSpeed;
+    const currentX = x(moment);
+    const currentY = y(current);
+    circle(ctx, currentX, currentY, 6, '#fbfcf9');
+    circle(ctx, currentX, currentY, 4.5, ink);
+  }
+
+  function render() {
+    const moment = momentInput.valueAsNumber;
+    const pitch = pitchInput.valueAsNumber;
+    const efficiency = efficiencyInput.valueAsNumber;
+    const { batSpeed, exitSpeed } = calculate(moment, pitch, efficiency);
+    const baseline = calculate(0, pitch, efficiency).exitSpeed;
+    const difference = signed(exitSpeed - baseline, 1);
+    for (const input of [momentInput, pitchInput, efficiencyInput]) {
+      const fraction = (input.valueAsNumber - Number(input.min)) / (Number(input.max) - Number(input.min));
+      input.style.setProperty('--fill', (100 * fraction) + '%');
+    }
+
+    const momentText = signed(moment, 0);
+    const efficiencyText = efficiency.toFixed(2);
+    const batText = batSpeed.toFixed(1);
+    const exitText = exitSpeed.toFixed(1);
+    document.getElementById('moment-value').textContent = momentText;
+    document.getElementById('pitch-value').textContent = pitch;
+    document.getElementById('efficiency-value').textContent = efficiencyText;
+    document.getElementById('bat-speed').textContent = batText;
+    document.getElementById('exit-speed').textContent = exitText;
+    document.getElementById('exit-kmh').textContent = (exitSpeed * 3.6).toFixed(1) + ' km/h';
+    document.getElementById('speed-change').textContent = difference;
+    momentInput.setAttribute('aria-valuetext', moment + ' ニュートンメートル');
+    pitchInput.setAttribute('aria-valuetext', pitch + ' メートル毎秒');
+    efficiencyInput.setAttribute('aria-valuetext', efficiencyText);
+
+    document.getElementById('chart-caption').textContent =
+      '投球速度 ' + pitch + ' m/s、衝突効率 ' + efficiencyText + '。丸印は現在の条件。';
+    chart.setAttribute('aria-label',
+      'バットにかかるモーメントと打球速度の関係。' + momentText + ' N·m で ' + exitText +
+      ' m/s、0 N·m で ' + baseline.toFixed(1) + ' m/s。');
+    drawCanvas(chart, (ctx, width, height) => drawChart(ctx, width, height, moment, pitch, efficiency));
+  }
+
+  for (const input of [momentInput, pitchInput, efficiencyInput]) {
+    input.addEventListener('input', render);
+    input.addEventListener('change', () => {
+      const { batSpeed, exitSpeed } = calculate(momentInput.valueAsNumber, pitchInput.valueAsNumber, efficiencyInput.valueAsNumber);
+      document.getElementById('results-announcement').textContent =
+        'バット速度 ' + batSpeed.toFixed(1) + ' メートル毎秒。打球速度 ' + exitSpeed.toFixed(1) + ' メートル毎秒。';
+    });
+  }
+
+  drawCanvas(diagram, drawDiagram);
+  render();
+  const resizeObserver = new ResizeObserver(entries => {
+    for (const entry of entries) {
+      if (entry.target === diagram) drawCanvas(diagram, drawDiagram);
+      if (entry.target === chart) render();
+    }
+  });
+  resizeObserver.observe(diagram);
+  resizeObserver.observe(chart);
+  window.addEventListener('beforeprint', () => {
+    drawCanvas(diagram, drawDiagram);
+    render();
+  });
+</script>
+</body>
+</html>
